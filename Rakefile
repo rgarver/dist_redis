@@ -1,6 +1,4 @@
 desc "Test"
 task :test do
-  Dir['./test/*_test.js'].each do |test_file|
-    system("node #{test_file}")
-  end
+  system("node test/test_helper.js #{Dir['./test/*_test.js'].map{|n| File.expand_path(n).gsub(/.js$/, '')}.join(" ")}")
 end
