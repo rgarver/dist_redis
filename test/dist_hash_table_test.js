@@ -1,15 +1,19 @@
+/*process.mixin(GLOBAL, require('./test_helper'));*/
+require('../vendor/ntest/ntest')
 var assert = require("assert");
 var sys = require("sys");
 var dht = require("../lib/dist_hash_table");
 
-sys.debug("TEST 1 : Can add nodes.")
-var test1 = new dht.DistHashTable()
-assert.doesNotThrow(function(){
-	test1.addNode({})
-}, TypeError)
+describe("DistHashTable")
+	it("can add nodes", function(){
+		var table = new dht.DistHashTable()
+		assert.doesNotThrow(function(){
+			table.addNode({})
+		}, TypeError)
+	})
 
-sys.debug("TEST 1 : Can retrieve nodes.")
-var test2 = new dht.DistHashTable()
-test2.addNode('test')
-assert.equal(test2.getNodeFor("anything"), 'test')
-
+	it("can retrieve nodes", function(){
+		var table = new dht.DistHashTable()
+		table.addNode('test')
+		assert.equal(table.getNodeFor("anything"), 'test')
+	})

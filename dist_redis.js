@@ -12,26 +12,29 @@ var server = tcp.createServer(function(socket){
 	socket.addListener('connect', function(){
 		sys.log("Connected");
 		socket.setNoDelay();
+		socket.handleRedisReply = handleResponseFn(socket);
 	});
 
 	socket.addListener('data', function(data){
-		sys.log("RECEIVED: " + data.replace("\r", "\\r").replace("\n", "\\n"));
+/*		sys.log("RECEIVED: " + data.replace("\r", "\\r").replace("\n", "\\n"));*/
 		var r = new ra.RedisArray(data)
 
 		if(r.command() == "SET") {
-			pool.write(r.toString());
-			socket.write("+OK\r\n");
-			sys.log("REPLYING: +OK\\r\\n");
-		} else if(r.command() == "PING") {
-			socket.write("+PONG\r\n");
-			sys.log("REPLYING: +PONG\\r\\n");
-		} else {
-			pool.write(r.toString(), function(data){
-				if(socket.readyState == "open") {
-					sys.log("REPLYING: " + data.replace("\r", "\\r").replace("\n", "\\n"));
-					socket.write(data);
-				}
+			process.nextTick(function(){pool.write(r.toString());});
+			process.nextTick(function(){
+				if(socket.readyState == "open")
+					socket.write("+OK\r\n");
+				sys.log("REPLYING: +OK\\r\\n");
 			});
+		} else if(r.command() == "PING") {
+			process.nextTick(function(){
+				if(socket.readyState == "open")
+					socket.write("+PONG\r\n");
+				sys.log("REPLYING: +PONG\\r\\n");
+			});
+		} else {
+			process.nextTick
+			pool.write(r.toString(), handleResponseFn(socket));
 		}
 	});
 
@@ -40,6 +43,23 @@ var server = tcp.createServer(function(socket){
 		socket.close();
 	});
 });
+
+function handleResponseFn(socket) {
+	return function(data) {
+/*		sys.log("GOT: " + data);*/
+		if(ra.validRedisResponse(data)) {
+			if(socket.readyState == "open")
+				socket.write(data);
+/*		sys.log("REPLYING: " + data.replace("\r", "\\r").replace("\n", "\\n"));*/
+			sys.log("REPLYING")
+			return true;
+		} else {
+/*			sys.log("NOT ENOUGH: " + data.replace("\r", "\\r").replace("\n", "\\n"));*/
+			sys.log("NOT ENOUGH");
+			return false;
+		}
+	}
+}
 
 pool.addListener('connected', function(){
 	server.listen(7000, "localhost");
