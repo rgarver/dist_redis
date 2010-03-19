@@ -35,3 +35,40 @@ describe("RedisArray")
 		assert.equal(r.command(), "LRANGE");
 		assert.deepEqual(r.toArray(), ["LRANGE", "test", "0", "3"]);
 	})
+
+describe("validRedisResponse")
+	it("validates errors", function(){
+		assert.ok(ra.validRedisResponse("-OK\r\n"));
+	})
+
+	it("validates success", function(){
+		assert.ok(ra.validRedisResponse("+OK\r\n"));
+	})
+
+	it("validates bulk data", function(){
+		assert.ok(ra.validRedisResponse("$3\r\nxxx\r\n"))
+	})
+
+	it("validates multi-bulk data", function(){
+		assert.ok(ra.validRedisResponse("*3\r\n$3\r\nxxx\r\n$1\r\na\r\n$2\r\nbb\r\n"))
+	})
+
+	it("validates integers", function(){
+		assert.ok(ra.validRedisResponse(":12345\r\n"))
+	})
+
+	it("rejects non-newline terminated data", function(){
+		assert.ok(!ra.validRedisResponse("+OK"))
+	})
+
+	it("rejects too short bulk data", function(){
+		assert.ok(!ra.validRedisResponse("$5\r\nxxx\r\n"))
+	})
+
+	it("rejects too short multi-bulk arrays", function(){
+		assert.ok(!ra.validRedisResponse("*3\r\n$3\r\nxxx\r\n$1\r\na\r\n"))
+	})
+
+	it("validates multi-bulk arrays with empty cells", function(){
+		assert.ok(ra.validRedisResponse("*3\r\n$3\r\nxxx\r\n$1\r\na\r\n$-1\r\n"))
+	})
